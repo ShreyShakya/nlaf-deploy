@@ -1,0 +1,123 @@
+.adminRegisterContainer {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    background-color: #f4f6f9;
+  }
+  
+  .adminRegisterCard {
+    background: white;
+    padding: 2rem;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    width: 100%;
+    max-width: 400px;
+    text-align: center;
+  }
+  
+  .adminRegisterCard h2 {
+    margin-bottom: 1.5rem;
+    color: #333;
+    font-size: 1.8rem;
+  }
+  
+  .formGroup {
+    margin-bottom: 1.2rem;
+    text-align: left;
+  }
+  
+  .formGroup label {
+    display: block;
+    margin-bottom: 0.5rem;
+    color: #555;
+    font-weight: 500;
+  }
+  
+  .formGroup input {
+    width: 100%;
+    padding: 0.8rem;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 1rem;
+    transition: border-color 0.3s;
+  }
+  
+  .formGroup input:focus {
+    outline: none;
+    border-color: #007bff;
+  }
+  
+  .inputError {
+    border-color: #dc3545;
+  }
+  
+  .error {
+    color: #dc3545;
+    font-size: 0.85rem;
+    margin-top: 0.3rem;
+    display: block;
+  }
+  
+  .successMessage {
+    color: #28a745;
+    font-size: 0.9rem;
+    margin-bottom: 1rem;
+  }
+  
+  .errorMessage {
+    color: #dc3545;
+    font-size: 0.9rem;
+    margin-bottom: 1rem;
+  }
+  
+  .registerButton {
+    width: 100%;
+    padding: 0.8rem;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: background-color 0.3s;
+  }
+  
+  .registerButton:hover {
+    background-color: #0056b3;
+  }
+  
+  .loginLink {
+    margin-top: 1rem;
+    font-size: 0.9rem;
+    color: #555;
+  }
+  
+  .loginLink a {
+    color: #007bff;
+    text-decoration: none;
+  }
+  
+  .loginLink a:hover {
+    text-decoration: underline;
+  }
+  
+  /* Responsive design */
+  @media (max-width: 480px) {
+    .adminRegisterCard {
+      padding: 1.5rem;
+      margin: 0 1rem;
+    }
+  
+    .adminRegisterCard h2 {
+      font-size: 1.5rem;
+    }
+  
+    .formGroup input {
+      padding: 0.7rem;
+    }
+  
+    .registerButton {
+      padding: 0.7rem;
+    }
+  }

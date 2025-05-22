@@ -1,0 +1,136 @@
+/* Base container for the page */
+.landingPage {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #f5f7fa 0%, #e4e7eb 100%);
+  font-family: 'Arial', sans-serif;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Hero section styles */
+.hero {
+  padding: 6rem 1rem 2rem; /* Adjusted for fixed header */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: calc(100vh - 4rem);
+}
+
+.heroContainer {
+  max-width: 800px;
+  width: 100%;
+  text-align: center;
+}
+
+.heroContent {
+  background: #fff;
+  padding: 2rem;
+  border-radius: 8px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.heroContent h1 {
+  font-size: 2.5rem;
+  color: #2c3e50;
+  margin-bottom: 1rem;
+}
+
+.heroContent p {
+  font-size: 1.2rem;
+  color: #7f8c8d;
+  margin-bottom: 2rem;
+}
+
+/* Form styles */
+.registrationForm {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  max-width: 500px;
+  margin: 0 auto;
+}
+
+.formGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  text-align: left;
+}
+
+.formGroup label {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: #2c3e50;
+}
+
+.formInput {
+  padding: 0.75rem 1rem;
+  font-size: 1rem;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  width: 100%;
+  box-sizing: border-box;
+  transition: border-color 0.3s;
+}
+
+.formInput:focus {
+  border-color: #3498db;
+  outline: none;
+}
+
+.formInput:disabled {
+  background-color: #f3f4f6;
+  cursor: not-allowed;
+}
+
+.submitButton {
+  padding: 0.75rem 1.5rem;
+  font-size: 1rem;
+  background-color: #3498db;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.3s, transform 0.2s;
+  margin-top: 0.5rem; /* Added to space buttons within formGroup */
+}
+
+.submitButton:hover {
+  background-color: #2980b9;
+  transform: scale(1.02);
+}
+
+.submitButton:disabled {
+  background-color: #9ca3af;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Message styles */
+.message {
+  margin-top: 1rem;
+  font-size: 1rem;
+  font-weight: 500;
+  color: #27ae60; /* Green for success */
+}
+
+.error {
+  color: #e74c3c; /* Red for error */
+}
+
+/* Auth link styles */
+.authLink {
+  margin-top: 1rem;
+  font-size: 1rem;
+  color: #7f8c8d;
+}
+
+.authLink a {
+  color: #3498db;
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.authLink a:hover {
+  text-decoration: underline;
+}
