@@ -29,7 +29,10 @@ load_dotenv()
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY')
 CORS(app, resources={r"/api/*": {"origins": [
-    "https://vite-react-ogq8-kwgnxw78d-shreyshakyas-projects.vercel.app",
+    "https://vite-react-ogq8.vercel.app",
+    "https://vite-react-ogq8-shreyshakyas-projects.vercel.app",
+    "https://vite-react-ogq8-git-main-shreyshakyas-projects.vercel.app",
+    "https://vite-react-ogq8-9ojs00bbn-shreyshakyas-projects.vercel.app",
     "http://localhost:5173",
     "http://localhost:3000"
 ]}})
