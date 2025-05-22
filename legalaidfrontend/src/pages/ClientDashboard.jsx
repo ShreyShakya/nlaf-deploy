@@ -23,7 +23,6 @@ import {
 import { Tooltip } from "react-tooltip";
 import styles from "./ClientDashboard.module.css";
 import io from "socket.io-client";
-import { initiateVideoCall } from "../utils/videoCallUtils";
 
 export default function ClientDashboard() {
   const [client, setClient] = useState(null);
@@ -50,8 +49,6 @@ export default function ClientDashboard() {
   const [chatMessages, setChatMessages] = useState([]);
   const [newMessage, setNewMessage] = useState("");
   const [selectedCaseForChat, setSelectedCaseForChat] = useState(null);
-  const [incomingCall, setIncomingCall] = useState(null);
-  const [currentCall, setCurrentCall] = useState(null);
   const [socket, setSocket] = useState(null);
 
   const navigate = useNavigate();
@@ -94,11 +91,6 @@ export default function ClientDashboard() {
       console.log("Connected to Socket.IO server");
     });
 
-    newSocket.on("incoming_call", (data) => {
-      setIncomingCall(data);
-      addNotification(`Incoming call for appointment #${data.appointmentId}`, "success");
-    });
-
     newSocket.on("call_error", (data) => {
       setIncomingCall(null);
       setCurrentCall(null);
@@ -120,8 +112,6 @@ export default function ClientDashboard() {
     // Cleanup on unmount
     return () => {
       newSocket.off("connect");
-      newSocket.off("incoming_call");
-      newSocket.off("call_error");
       newSocket.off("new_message");
       newSocket.off("status");
       if (selectedCaseForChat) {
@@ -217,84 +207,6 @@ export default function ClientDashboard() {
 
   const handleAppointmentDetails = (appointment) => {
     setSelectedAppointment(appointment);
-  };
-
-  const handleAnswerCall = () => {
-    if (!incomingCall) {
-      console.error("No incoming call data available");
-      return;
-    }
-
-    const callWindow = window.open("", "_blank", "width=1200,height=800");
-    if (!callWindow) {
-      setIncomingCall(null);
-      addNotification("Failed to open call window. Please allow pop-ups.", "error");
-      console.error("Pop-up window blocked or failed to open");
-      return;
-    }
-
-    // Set up the call window
-    callWindow.document.title = "Video Consultation";
-    callWindow.document.body.style.margin = "0";
-    callWindow.document.body.style.padding = "0";
-    callWindow.document.body.style.overflow = "hidden";
-
-    // Create the Jitsi container
-    const container = callWindow.document.createElement("div");
-    container.id = "jitsi-container";
-    container.style.width = "100%";
-    container.style.height = "100vh";
-    callWindow.document.body.appendChild(container);
-
-    // Load the Jitsi script
-    const script = callWindow.document.createElement("script");
-    script.src = "https://8x8.vc/vpaas-magic-cookie-70206cd47ac84290b883e32da817bc72/external_api.js";
-    script.async = true;
-
-    script.onload = () => {
-      try {
-        console.log("Jitsi script loaded for client. Starting video call.");
-        const api = initiateVideoCall(incomingCall.appointmentId, "client", callWindow, incomingCall.clientJwt);
-        setCurrentCall(api);
-        setIncomingCall(null);
-
-        api.on("readyToClose", () => {
-          console.log("Client video call ended");
-          if (currentCall) {
-            currentCall.dispose();
-          }
-          setCurrentCall(null);
-          if (!callWindow.closed) {
-            callWindow.close();
-          }
-        });
-      } catch (err) {
-        console.error("Video call init error (client):", err.message, err.stack);
-        setIncomingCall(null);
-        setCurrentCall(null);
-        if (!callWindow.closed) {
-          callWindow.close();
-        }
-        addNotification(`Failed to initialize video call: ${err.message}`, "error");
-      }
-    };
-
-    script.onerror = () => {
-      console.error("Failed to load Jitsi script");
-      setIncomingCall(null);
-      if (!callWindow.closed) {
-        callWindow.close();
-      }
-      addNotification("Failed to load video call resources", "error");
-    };
-
-    callWindow.document.head.appendChild(script);
-  };
-
-
-  const handleDeclineCall = () => {
-    setIncomingCall(null);
-    addNotification("Call declined", "success");
   };
 
   const handleProfileChange = (e) => {
@@ -1340,37 +1252,6 @@ export default function ClientDashboard() {
               {notification.message}
             </motion.div>
           ))}
-
-          {incomingCall && (
-            <motion.div
-              className={styles.modalOverlay}
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-            >
-              <motion.div
-                className={styles.modalContent}
-                initial={{ scale: 0.8, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                exit={{ scale: 0.8, opacity: 0 }}
-              >
-                <div className={styles.modalHeader}>
-                  <h3>Incoming Video Call</h3>
-                </div>
-                <div className={styles.modalBody}>
-                  <p>Your lawyer is calling you for appointment #{incomingCall.appointmentId}</p>
-                </div>
-                <div className={styles.modalFooter}>
-                  <button onClick={handleAnswerCall} className={styles.primaryButton}>
-                    Answer
-                  </button>
-                  <button onClick={handleDeclineCall} className={styles.secondaryButton}>
-                    Decline
-                  </button>
-                </div>
-              </motion.div>
-            </motion.div>
-          )}
         </AnimatePresence>
       </div>
 

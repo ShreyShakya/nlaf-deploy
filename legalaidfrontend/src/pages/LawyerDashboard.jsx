@@ -23,7 +23,6 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Tooltip } from "react-tooltip";
 import styles from "./LawyerDashboard.module.css";
 import io from "socket.io-client";
-import { initiateVideoCall } from '../utils/videoCallUtils';
 
 export default function LawyerDashboard() {
   const [lawyer, setLawyer] = useState(null);
@@ -68,8 +67,6 @@ export default function LawyerDashboard() {
   const [clientCases, setClientCases] = useState([]);
   const [selectedCaseForChat, setSelectedCaseForChat] = useState(null);
   const [socket, setSocket] = useState(null);
-  const [isCalling, setIsCalling] = useState(false);
-  const [currentCall, setCurrentCall] = useState(null);
   const [isKycFormOpen, setIsKycFormOpen] = useState(false);
   const [kycFormData, setKycFormData] = useState({
     license_number: "",
@@ -179,13 +176,6 @@ export default function LawyerDashboard() {
       console.log(data.message);
     });
 
-    newSocket.on("call_error", (data) => {
-      setIsCalling(false);
-      setCurrentCall(null);
-      setDialog({ isOpen: false, message: "", onConfirm: null });
-      addNotification(data.message || "Failed to connect to the client. Please try again.", "error");
-    });
-
     newSocket.on("connect", () => {
       console.log("Connected to Socket.IO server");
     });
@@ -205,7 +195,6 @@ export default function LawyerDashboard() {
       newSocket.off("connect");
       newSocket.off("new_message");
       newSocket.off("status");
-      newSocket.off("call_error");
       if (selectedCaseForChat) {
         newSocket.emit("leave", { case_id: selectedCaseForChat.id });
       }
@@ -533,116 +522,6 @@ export default function LawyerDashboard() {
       setIsLoading(false);
     }
   };
-
-  const handleStartCall = async (appointment) => {
-    setIsCalling(true);
-    let callWindow;
-
-    try {
-      const token = localStorage.getItem("lawyerToken");
-      const response = await axios.post(
-        "http://127.0.0.1:5000/api/get-jaas-jwt",
-        {
-          appointment_id: appointment.id,
-          user_type: "lawyer",
-          user_name: lawyer.name || "Lawyer",
-        },
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
-      const { jwt } = response.data;
-
-      // Open call window
-      callWindow = window.open("", "_blank", "width=1200,height=800");
-      if (!callWindow) {
-        throw new Error("Failed to open popup window. Allow pop-ups in your browser.");
-      }
-
-      callWindow.document.title = "Video Consultation";
-      callWindow.document.body.style.margin = "0";
-      callWindow.document.body.style.padding = "0";
-      callWindow.document.body.style.overflow = "hidden";
-
-      const container = callWindow.document.createElement("div");
-      container.id = "jitsi-container";
-      container.style.width = "100%";
-      container.style.height = "100vh";
-      callWindow.document.body.appendChild(container);
-
-      // Dynamically load Jitsi script into the popup
-      const script = callWindow.document.createElement("script");
-      script.src = "https://8x8.vc/vpaas-magic-cookie-70206cd47ac84290b883e32da817bc72/external_api.js";
-      script.async = true;
-
-      script.onload = () => {
-        console.log("Jitsi script loaded in popup.");
-        const api = initiateVideoCall(appointment.id, "lawyer", callWindow, jwt);
-        setCurrentCall(api);
-
-        socket.emit("initiate_call", {
-          appointment_id: appointment.id,
-          client_id: appointment.client_id,
-          lawyer_name: lawyer.name,
-        });
-
-        api.on("errorOccurred", async (error) => {
-          console.error("Jitsi error details:", JSON.stringify(error, null, 2));
-          if (error.name === "connection.passwordRequired" && error.message.includes("expired")) {
-            console.log("JWT expired, attempting to fetch a new one...");
-            try {
-              const token = localStorage.getItem("lawyerToken");
-              const response = await axios.post(
-                "http://127.0.0.1:5000/api/get-jaas-jwt",
-                {
-                  appointment_id: appointment.id,
-                  user_type: "lawyer",
-                  user_name: lawyer.name || "Lawyer",
-                },
-                { headers: { Authorization: `Bearer ${token}` } }
-              );
-              const newJwt = response.data.jwt;
-              api.dispose(); // Dispose of the old API instance
-              const newApi = initiateVideoCall(appointment.id, "lawyer", callWindow, newJwt);
-              setCurrentCall(newApi);
-            } catch (retryErr) {
-              console.error("Failed to retry with new JWT:", retryErr.message);
-              addNotification("Failed to reconnect video call: Token refresh failed", "error");
-              setIsCalling(false);
-              if (!callWindow.closed) callWindow.close();
-            }
-          } else {
-            throw new Error(`Jitsi error: ${JSON.stringify(error)}`);
-          }
-        });
-
-        api.on("readyToClose", () => {
-          console.log("Lawyer video call ended");
-          api.dispose();
-          setCurrentCall(null);
-          setIsCalling(false);
-          if (!callWindow.closed) {
-            callWindow.close();
-          }
-        });
-      };
-
-      script.onerror = () => {
-        throw new Error("Failed to load Jitsi script in popup window.");
-      };
-
-      callWindow.document.head.appendChild(script);
-    } catch (err) {
-      console.error("handleStartCall error:", err.message, err.stack);
-      setIsCalling(false);
-      setDialog({ isOpen: false, message: "", onConfirm: null });
-      if (callWindow && !callWindow.closed) {
-        callWindow.close();
-      }
-      addNotification(`Failed to initialize video call: ${err.message}`, "error");
-    }
-  };
-
 
   const handleNewCaseChange = (e) => {
     const { name, value } = e.target;
@@ -1947,17 +1826,6 @@ export default function LawyerDashboard() {
                     </button>
                   </div>
                 )}
-
-                {selectedAppointment.status === "confirmed" && (
-                  <button
-                    onClick={() => handleStartCall(selectedAppointment)}
-                    className={styles.primaryButton}
-                    disabled={isCalling}
-                  >
-                    {isCalling ? 'Calling...' : 'Start Video Call'}
-                  </button>
-                )}
-
                 <button onClick={() => setSelectedAppointment(null)} className={styles.secondaryButton}>
                   Close
                 </button>

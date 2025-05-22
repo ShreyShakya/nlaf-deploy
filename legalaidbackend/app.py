@@ -15,7 +15,6 @@ import smtplib
 from email.mime.text import MIMEText
 import random
 import string
-from cryptography.hazmat.primitives import serialization
 import jwt as pyjwt
 from apscheduler.schedulers.background import BackgroundScheduler
 from dotenv import load_dotenv
@@ -28,65 +27,6 @@ CORS(app, resources={r"/api/*": {"origins": ["http://localhost:5173", "http://lo
 
 EMAIL_ADDRESS = os.getenv('EMAIL_ADDRESS')
 EMAIL_PASSWORD = os.getenv('EMAIL_PASSWORD')  
-
-# Load private key
-PRIVATE_KEY_PATH = os.getenv('PRIVATE_KEY_PATH')
-try:
-    with open(PRIVATE_KEY_PATH, 'rb') as key_file:
-        PRIVATE_KEY = serialization.load_pem_private_key(
-            key_file.read(),
-            password=None
-        )
-except FileNotFoundError:
-    raise Exception(f"Private key file not found at {PRIVATE_KEY_PATH}")
-except Exception as e:
-    raise Exception(f"Error loading private key: {str(e)}")
-
-# 8x8 JaaS credentials
-APP_ID = os.getenv('APP_ID')
-API_KEY = os.getenv('API_KEY')
-
-# Generate JWT for JaaS
-
-def generate_jaas_jwt(user_type, user_name, appointment_id):
-    now = datetime.now(pytz.UTC)
-    print("🔧 Server time (UTC):", now)
-    print("🔧 Token exp UTC:", now + timedelta(hours=1))
-    print("🔧 exp timestamp:", int((now + timedelta(hours=1)).timestamp()))
-    payload = {
-        "iss": "chat",
-        "aud": "jitsi",
-        "exp": int((now + timedelta(hours=1)).timestamp()),
-        "nbf": int((now - timedelta(seconds=30)).timestamp()),
-        "room": f"NepaliLegalAid-{appointment_id}",
-        "sub": APP_ID,
-        "context": {
-            "user": {
-                "name": user_name,
-                "moderator": user_type == "lawyer",
-                "hidden-from-recorder": False,
-                "email": f"{user_type}@nepali-legalaidfinder.com",
-                "id": f"{user_type}-{appointment_id}"
-            },
-            "features": {
-                "livestreaming": False,
-                "outbound-call": False,
-                "sip-outbound-call": False,
-                "transcription": False,
-                "recording": False
-            }
-        }
-    }
-    headers = {
-        "kid": API_KEY,
-        "typ": "JWT",
-        "alg": "RS256"
-    }
-    token = pyjwt.encode(payload, PRIVATE_KEY, algorithm="RS256", headers=headers)
-    print("🔧 Generated JWT:", token)
-    decoded = pyjwt.decode(token, options={"verify_signature": False})
-    print("🔧 Decoded JWT payload:", decoded)
-    return token
 
 # Initialize Flask-SocketIO
 socketio = SocketIO(app, cors_allowed_origins="*")
@@ -2853,23 +2793,6 @@ def on_leave_case(data):
         leave_room(room)
         emit('status', {'message': f'Left case room {case_id}'}, to=room)
 
-@socketio.on('initiate_call')
-def handle_initiate_call(data):
-    appointment_id = data.get('appointment_id')
-    client_id = data.get('client_id')
-    lawyer_name = data.get('lawyer_name', 'Lawyer')
-    if not appointment_id or not client_id:
-        emit('call_error', {'message': 'Invalid appointment or client ID'})
-        return
-    client_jwt = generate_jaas_jwt("client", "Client", appointment_id)
-    lawyer_jwt = generate_jaas_jwt("lawyer", lawyer_name, appointment_id)
-    room = f"client_{client_id}"
-    emit('incoming_call', {
-        'appointmentId': appointment_id,
-        'clientJwt': client_jwt,
-        'lawyerJwt': lawyer_jwt
-    }, room=room)
-
 @socketio.on('join_client_room')
 def handle_join_client_room(data):
     client_id = data.get('client_id')
@@ -2877,22 +2800,6 @@ def handle_join_client_room(data):
         room = f"client_{client_id}"
         join_room(room)
         emit('status', {'message': f'Joined room {room}'})
-
-# Endpoint to get JWT for lawyer
-@app.route('/api/get-jaas-jwt', methods=['POST'])
-def get_jaas_jwt():
-    data = request.get_json()
-    appointment_id = data.get('appointment_id')
-    user_type = data.get('user_type')
-    user_name = data.get('user_name', user_type.capitalize())
-    if not appointment_id or not user_type:
-        return jsonify({'error': 'Missing appointment_id or user_type'}), 400
-    try:
-        jwt_token = generate_jaas_jwt(user_type, user_name, appointment_id)
-        print(f"Generated JWT at {datetime.utcnow()}: {jwt_token}")
-        return jsonify({'jwt': jwt_token})
-    except Exception as e:
-        return jsonify({'error': f'Failed to generate JWT: {str(e)}'}), 500
 
 if __name__ == '__main__':
     socketio.run(app, debug=True, host='0.0.0.0', port=5000)
