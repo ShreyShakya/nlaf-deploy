@@ -1,3 +1,6 @@
+import eventlet
+eventlet.monkey_patch()
+
 from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
 from flask_socketio import SocketIO, emit, join_room, leave_room
@@ -2102,6 +2105,4 @@ scheduler.add_job(send_appointment_reminders, 'interval', hours=1)
 scheduler.start()
 
 if __name__ == '__main__':
-    import eventlet
-    eventlet.monkey_patch()
     socketio.run(app, host='0.0.0.0', port=int(os.getenv('PORT', 5000)))
