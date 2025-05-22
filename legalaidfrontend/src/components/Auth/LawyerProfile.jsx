@@ -310,15 +310,9 @@ export default function LawyerProfile() {
               <h2>About {lawyer.name}</h2>
               <p>{lawyer.bio || 'No bio available.'}</p>
 
-              <h2>Contact Information</h2>
-              <p>
-                <strong>Preferred Contact Method:</strong> {lawyer.preferred_contact || 'Not specified'}
-              </p>
+              <h2>Additional Information</h2>
               <p>
                 <strong>Working Hours:</strong> {lawyer.working_hours_start} - {lawyer.working_hours_end}
-              </p>
-              <p>
-                <strong>Email Notifications:</strong> {lawyer.email_notifications ? 'Enabled' : 'Disabled'}
               </p>
               <p>
                 <strong>Pro Bono Availability:</strong> {lawyer.pro_bono_availability ? 'Available' : 'Not Available'}

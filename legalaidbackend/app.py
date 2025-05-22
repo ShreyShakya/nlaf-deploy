@@ -18,54 +18,33 @@ import string
 from cryptography.hazmat.primitives import serialization
 import jwt as pyjwt
 from apscheduler.schedulers.background import BackgroundScheduler
+from dotenv import load_dotenv
+
+load_dotenv()
 
 app = Flask(__name__)
-app.config['SECRET_KEY'] = "your-secret-key-here" 
+app.config['SECRET_KEY'] = os.getenv('SECRET_KEY')
 CORS(app, resources={r"/api/*": {"origins": ["http://localhost:5173", "http://localhost:3000"]}})  # Allow admin frontend
 
-EMAIL_ADDRESS = 'nlaf.legal@gmail.com'  # Replace with your Gmail
-EMAIL_PASSWORD = 'wcee rabs lqme focz'  
+EMAIL_ADDRESS = os.getenv('EMAIL_ADDRESS')
+EMAIL_PASSWORD = os.getenv('EMAIL_PASSWORD')  
 
 # Load private key
-from cryptography.hazmat.primitives import serialization
-
-PRIVATE_KEY_PEM = """-----BEGIN PRIVATE KEY-----
-MIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQC/waVg15VPE6DG
-Ub/xkcATY73tz+VzBFbbdN3eIAc/1RRWVE4k8xmULZSmjk6NgG6sDBPmAIbhtI/t
-ntpuPM9m8aiQgwMZV+5EkGVSxgezlLBF+kSE2RYwkXWEoCqlP0P8K2q/bwszwDph
-sns3FrSZ0EV7qmH/81UI00jiQ2mfu5o0RU/lmgAf31TqaUXiTbhbHOmn5t9Q0XNp
-OeBmi14mFXYzhQi5BPGDkgB0X3W5838frvqvarHCqb3la8vpJm/GzEtCUis+WAfI
-NaW7ee7WzqyrBU66txzEX3UK176I/rm9/TpnxGR6AKkh/vz1NKW4QMDMavctGemz
-hYRvFdPfAgMBAAECggEAT+U1LLZmRX5eHINvQA2ERA/o0K8wYM3MCsAUuToLCzOS
-t62EqayIWc7sAsGERTzf39tgZxKNIHmFBnKLfCbmG3RQ0XVk0yhp5DNtpCFSkCZB
-k8aEyf1RW4cfudSqMBO+FdFZNs3jkvpi2NXutLNHKFc4vB/vmR8frP+rfGquFZjy
-KJTysSpp/QsbhWzo61r8UmeRzmErMHVu9RC4yi8kEdGHMh5pVDLbrltIq9vaoMc6
-9Th4J7rwM9h1HYv4pJ86lZ/tFsd8tYiwqrarxuzmsdrgKRI0yVRs7sEAgO3jph0K
-tJDzF92ytjzHCzK2n/5123XrK1GXbMMAHM0oxamikQKBgQDibRbk1wAw8X8/sTS6
-JV9aEiMXIgni+cDzN1eKOm6UHcH5f73oWIJesaF6klJoCITBBTtso/+cdNm8Ydpc
-dsfSPxFxYBWSPT9UDQQt4ll3mD8K96+hHsPC4XPrVG2vDCwZyZ7rPfw/NbUwYXsz
-AjjxHRwBm5SaA8NunyC+XjcXYwKBgQDYzVIzbGFXQiDGrDw69WO/ywx+7xAafowN
-kZIa0ZEwjRB7cwR24slWwD+yT5YTx/QF+DfqXrdhJGfDWytf9AyIhYzP4hTQYjEm
-miRzY6rna9jyHypFrgPBW++muFxUagwMv5bOu9Jb8ZdhWgbuZLach/uQny06Ud9Q
-PJn5BZ2wVQKBgQCSS7nHEcNl3CNDm9NdklgRcjaJ88w/gu9QNimxfh+EQ9XYxtiF
-DurtFAgpkfD8lsRvklnaz/uPs1Abj33u0DA7f9RdVJ+bZUdNnztcCiuUQiI5i99G
-UwJZICItotdbipnT75lmlR4uGR2ArPtU8dKotw4pW8Sf3l6fUuFtHqKp0QKBgBeP
-aIlyE7n507oDaaA2nppvJHJ+5E8cxXeMBEap049lJQ9lVmzdBGhLCCEGiRapOhmT
-+e+cT21dGXGfbL1Gtj331W+Z8A0dPp4lTiTEBgSUMcVOIbfkyz+uEAMcMdxykdCo
-2Wip/JhFTuAjenFZvIaSOIJk6fNWhmAf1dO8CoDpAoGBANq2aM0Av5d41mxQi6ME
-eMeRM+Vv4qlgHxUfL4eeuqUBrSiwxZ3ATtXIA2Sn8MLDm9mI+vBetUJC39RRltvZ
-x86/S1+hqWqcPLVeZUAHhFo5qQgPosjjFySpF3tEWb2zxNZ6D82rBrx7nFXnswTs
-lIfg7g2HtIsv4BrkZumk8A8W
------END PRIVATE KEY-----"""
-
-PRIVATE_KEY = serialization.load_pem_private_key(
-    PRIVATE_KEY_PEM.encode(),
-    password=None
-)
+PRIVATE_KEY_PATH = os.getenv('PRIVATE_KEY_PATH')
+try:
+    with open(PRIVATE_KEY_PATH, 'rb') as key_file:
+        PRIVATE_KEY = serialization.load_pem_private_key(
+            key_file.read(),
+            password=None
+        )
+except FileNotFoundError:
+    raise Exception(f"Private key file not found at {PRIVATE_KEY_PATH}")
+except Exception as e:
+    raise Exception(f"Error loading private key: {str(e)}")
 
 # 8x8 JaaS credentials
-APP_ID = "vpaas-magic-cookie-70206cd47ac84290b883e32da817bc72"
-API_KEY = "vpaas-magic-cookie-70206cd47ac84290b883e32da817bc72/f5adc6"
+APP_ID = os.getenv('APP_ID')
+API_KEY = os.getenv('API_KEY')
 
 # Generate JWT for JaaS
 
@@ -117,9 +96,9 @@ UPLOAD_FOLDER = 'uploads'
 EVIDENCE_FOLDER = 'evidence'
 COURT_FILES_FOLDER = 'court_files'
 DOCUMENT_TEMPLATES_FOLDER = 'document_templates'
-app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+app.config['UPLOAD_FOLDER'] = os.getenv('UPLOAD_FOLDER', 'uploads')
 KYC_FOLDER = 'kyc_documents'
-app.config['KYC_FOLDER'] = KYC_FOLDER
+app.config['KYC_FOLDER'] = os.getenv('KYC_FOLDER', 'kyc_documents')
 os.makedirs(KYC_FOLDER, exist_ok=True)
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'pdf', 'doc', 'docx'}  # Updated for templates
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
@@ -135,7 +114,7 @@ db_config = {
     'cursorclass': pymysql.cursors.DictCursor
 }
 
-SECRET_KEY = "your-secret-key-here"  # Replace with a secure key in production
+SECRET_KEY = os.getenv('SECRET_KEY')
 
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS

@@ -357,7 +357,7 @@ export default function LandingPage() {
               <Mail className={styles.contactIcon} />
               <div>
                 <h4>Email Us</h4>
-                <p>info@nlaf.com</p>
+                <p>nlaf.legal@gmail.com</p>
               </div>
             </div>
 
